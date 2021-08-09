@@ -31,19 +31,23 @@ import cv2
 #     cv2.putText(buf,'B:{},C:{}'.format(brightness,contrast),(10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 #     return buf
 
+def scope_to_int(_scope):
+    # return [[int(number) for number in point] for point in _scope]
+    return _scope
+
 
 def find_coordinates_of_number_letters_american_1995(x, y, width, height):
-    first_x = x - (width / 15)
+    first_x = x - (width / 5)
     first_y = y + (4 * height)
     first_width = width * 195 / 130
     first_height = height * 151 / 40
 
-    second_x = first_x + 1.6 * first_width
-    second_y = y - height * 1.3
+    second_x = first_x + first_width + (width / 2)
+    second_y = y - height * 1.5
     second_width = width * 387 / 130
     second_height = height * 180 / 40
 
-    third_x = second_x - (x / (x / 87))
+    third_x = first_x + first_width
     third_y = second_y + second_height
     third_width = width * 590 / 130
     third_height = height * 204 / 40
@@ -51,7 +55,6 @@ def find_coordinates_of_number_letters_american_1995(x, y, width, height):
         [first_x, first_y, first_width, first_height],
         [third_x, third_y, third_width, third_height],
         [second_x, second_y, second_width, second_height]
-
     )
 
 
@@ -62,9 +65,9 @@ def find_coordinates_of_number_letters_american_2004(x, y, width, height):
     first_y = y
 
     second_width = first_width * 1.1
-    second_height = height * 1.05
+    second_height = height
     second_x = first_x + first_width + (width / 1.2) * 0.7
-    second_y = y * 1.1
+    second_y = first_y
 
     third_width = width * 119 / 28
     third_height = height
@@ -156,7 +159,7 @@ def find_coordinates_of_number_letters_standard_2004(x, y, width, height):
 def find_coordinates_of_number_letters_standard_2015(x, y, width, height):
     first_x = x + width
     first_y = y
-    first_width = width * 264 / 87
+    first_width = width * 264 / 87 * 0.87
     first_height = height
 
     second_x = first_x + first_width
@@ -224,7 +227,7 @@ def find_coordinates_of_number_letters_tractor_2004(x, y, width, height):
 
 def search_scope(image, function):
     blue_x, blue_y, blue_width, blue_height = find_blue(image)
-    return function(blue_x, blue_y, blue_width, blue_height)
+    return scope_to_int(function(blue_x, blue_y, blue_width, blue_height))
 
 
 if __name__ == '__main__':
