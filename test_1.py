@@ -1,6 +1,8 @@
 import os
-from cv2 import cv2
 
+import numpy as np
+from cv2 import cv2
+import time
 from CarNumberRecognition import say_what_is_it, update_number, update_image
 from NumberFinder.ColorFinder import find_yellow
 from NumberFinder.car_number_consts import get_type_of_car_number
@@ -31,9 +33,10 @@ funcs_of_type = {
     ]
 }
 
+
 def get_scopes(image):
-    blue_coordinates = find_blue(img)
-    yellow_coordinates = find_yellow(img)
+    blue_coordinates = find_blue(image)
+    yellow_coordinates = find_yellow(image)
     year = get_type_of_car_number(*blue_coordinates[2:], *yellow_coordinates[2:])
     needed_funcs = funcs_of_type[year]
     answer = {}
@@ -49,7 +52,7 @@ def draw_scopes(image, scopes):
     for i in range(len(scopes)):
         scope = scopes[i]
         x, y, width, height = (int(num) for num in scope)
-        cv2.rectangle(img, (x, y), (x+width, y+height), (0, 0, 0), 1)
+        cv2.rectangle(img, (x, y), (x + width, y + height), (0, 0, 0), 1)
     return img
 
 
@@ -78,7 +81,7 @@ def check_number(type_number, number):
     return False
 
 
-
+v_say_what_is_it = np.vectorize(say_what_is_it)
 
 
 def get_number(img):
@@ -99,10 +102,10 @@ def get_number(img):
             cropped = img[y:y + height, x:x + width]
             # gry = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
             # ret, thresh_gry = cv2.threshold(gry, 120, 255, cv2.THRESH_BINARY)
-            its = say_what_is_it(cropped)
-            answer.append(its)
+            # its = say_what_is_it(cropped)
+            answer.append(cropped)
             # cv2.imwrite(f'Output/{answer[-1]}.jpg', its[0])
-        answer = update_number(year, "".join(answer))
+        answer = update_number(year, "".join(v_say_what_is_it(answer)))
         if check_number(type_number, answer):
             return type_number, answer
     return answers
@@ -110,24 +113,24 @@ def get_number(img):
 
 if __name__ == '__main__':
 
-    # img_names = os.listdir('Input')
-    #
-    # for name in img_names:
-    #     try:
-    #         img = cv2.imread(f'Input/{name}')
-    #         print(name, get_number(img))
-    #     except:
-    #         print(name, 'error')
     img_names = os.listdir('Input')
+
     for name in img_names:
-        if not 'american_1995' in name:
-            continue
-        img = cv2.imread(f'Input/{name}')
-        # print(get_number(img))
-        scopes = get_scopes(img)
-        for _name in scopes.keys():
-            cv2.imshow(name+_name, draw_scopes(img, scopes[_name]))
-    cv2.waitKey(0)
+        try:
 
-
-
+            img = cv2.imread(f'Input/{name}')
+            start_time = time.time()
+            print(name, get_number(img))
+            print("--- %s seconds ---" % (time.time() - start_time))
+        except:
+            print(name, 'error')
+    # img_names = os.listdir('Input')
+    # for name in img_names:
+    #     if not 'american_1995' in name:
+    #         continue
+    #     img = cv2.imread(f'Input/{name}')
+    #     # print(get_number(img))
+    #     scopes = get_scopes(img)
+    #     for _name in scopes.keys():
+    #         cv2.imshow(name + _name, draw_scopes(img, scopes[_name]))
+    # cv2.waitKey(0)
