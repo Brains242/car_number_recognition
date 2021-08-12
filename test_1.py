@@ -1,9 +1,11 @@
 import os
+from typing import Set, Tuple, Dict, List
 
 import numpy as np
-from cv2 import cv2
+import cv2
+
 import time
-from CarNumberRecognition import say_what_is_it, update_number, update_image
+from CarNumberRecognition import say_what_is_it, update_number, update_image, predict_number
 from NumberFinder.ColorFinder import find_yellow
 from NumberFinder.car_number_consts import get_type_of_car_number
 from NumberFinder import find_coordinates_of_number_letters_american_1995, \
@@ -15,12 +17,15 @@ from NumberFinder import find_coordinates_of_number_letters_american_1995, \
     find_coordinates_of_number_letters_tractor_1995, \
     find_coordinates_of_number_letters_tractor_2004, \
     search_scope, find_blue
+from test_my_threading import NumberRecognition, check_number
+
+cv2.setLogLevel(0)
 
 funcs_of_type = {
     1995: [
-        find_coordinates_of_number_letters_american_1995,
         find_coordinates_of_number_letters_standard_1995,
-        find_coordinates_of_number_letters_tractor_1995
+        find_coordinates_of_number_letters_tractor_1995,
+        find_coordinates_of_number_letters_american_1995,
     ],
     2004: [
         find_coordinates_of_number_letters_american_2004,
@@ -56,59 +61,29 @@ def draw_scopes(image, scopes):
     return img
 
 
-def is_number(number):
-    answer = True
-    for n in number[2:-2]:
-        answer = answer and n in '0123456789'
-    for n in number[:2]:
-        answer = answer and n in 'QWERTYUIOPASDFGHJKLZXCVBNM'
-    for n in number[-2:]:
-        answer = answer and n in 'QWERTYUIOPASDFGHJKLZXCVBNM'
-    return answer
-
-
-def check_number(type_number, number):
-    year = int(type_number.split('_')[-1])
-    if year >= 2004 and len(number) == 8 and is_number(number):
-        return True
-    elif len(number) == 9:
-        answer = True
-        for n in number[:-2]:
-            answer = answer and n in '0123456789'
-        for n in number[-2:]:
-            answer = answer and n in 'QWERTYUIOPASDFGHJKLZXCVBNM'
-        return answer
-    return False
-
-
-v_say_what_is_it = np.vectorize(say_what_is_it)
-
-
 def get_number(img):
-    x, y, width, height = blue_coordinates = find_blue(img)
+    blue_coordinates: Tuple[int, int, int, int] = find_blue(img)
+    x, y, width, height = blue_coordinates
     # cv2.rectangle(img, (x, y), (x+width, y+height), (0, 0, 255), 1)
-    yellow_coordinates = find_yellow(img)
-    year = get_type_of_car_number(*blue_coordinates[2:], *yellow_coordinates[2:])
-    needed_funcs = funcs_of_type[year]
-    answers = []
-    for func in needed_funcs:
-        type_number = "_".join(func.__name__.split('_')[-2:])
-        scopes = search_scope(img, func)
-        answer = []
-        for i in range(len(scopes)):
-            scope = scopes[i]
+    yellow_coordinates: Tuple[int, int, int, int] = find_yellow(img)
+    year: int = get_type_of_car_number(*blue_coordinates[2:], *yellow_coordinates[2:])
+    needed_funcs: list = funcs_of_type[year]
+    cropped_images: Dict[str, List[np.ndarray]] = {}
+    for function in needed_funcs:
+        cropped_images[function.__name__] = []
+        scopes: List[List[int]] = search_scope(img, function)
+        for scope in scopes:
             x, y, width, height = (int(num) for num in scope)
-            # cv2.rectangle(img, (x, y), (x+width, y+height), (0, 0, 0), 1)
-            cropped = img[y:y + height, x:x + width]
-            # gry = cv2.cvtColor(cropped, cv2.COLOR_BGR2GRAY)
-            # ret, thresh_gry = cv2.threshold(gry, 120, 255, cv2.THRESH_BINARY)
-            # its = say_what_is_it(cropped)
-            answer.append(cropped)
-            # cv2.imwrite(f'Output/{answer[-1]}.jpg', its[0])
-        answer = update_number(year, "".join(v_say_what_is_it(answer)))
-        if check_number(type_number, answer):
-            return type_number, answer
-    return answers
+            cropped: np.ndarray = img[y:y + height, x:x + width]
+            cropped_images[function.__name__].append(cropped)
+    for cropped_name in cropped_images.keys():
+        predict_answer = predict_number(cropped_images[cropped_name])
+        answer = "".join(predict_answer)
+        if check_number(year, answer):
+            return year, answer
+    # p = NumberRecognition(img, needed_funcs)
+    # answer = p.loop()
+    # return answer
 
 
 if __name__ == '__main__':

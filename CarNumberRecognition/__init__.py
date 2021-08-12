@@ -1,3 +1,5 @@
+from typing import List, Tuple, Dict
+
 import numpy as np
 import tensorflow as tf
 from cv2 import cv2
@@ -82,7 +84,7 @@ def update_image(img):
 
 def say_what_is_it(image):
     try:
-        image = (255-image)
+        image = (255 - image)
         rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
     except:
         return ''
@@ -103,6 +105,35 @@ def say_what_is_it(image):
                 max_area = area
                 answer = p
     return answer.upper()
+
+
+def predict_number(images):
+    complete_images = []
+    for image in images:
+        try:
+            image = (255 - image)
+            rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+            complete_images.append(rgb)
+        except:
+            return []
+    prediction_groups: List[List[Tuple]] = keras_ocr_pipeline.recognize(complete_images)
+    answer = {}
+    for i in range(len(prediction_groups)):
+        predictions: List[Tuple[str, Tuple]] = prediction_groups[i]
+        if len(predictions):
+            max_area: float = 0
+        else:
+            continue
+        for prediction in predictions:
+            p: str = prediction[0]
+            pts: Tuple[List, List, List, List] = prediction[1]
+            pt_top_left, pt_top_right, pt_bottom_right, pt_bottom_left = pts
+            width, height = pt_top_right[0] - pt_top_left[0], pt_bottom_right[1] - pt_top_right[1]
+            area: float = width * height
+            if area > max_area:
+                max_area = area
+                answer[i]: str = p.upper()
+    return list(answer.values())
 
 # if __name__ == '__main__':
 #     from NumberFinder import find_coordinates_of_number_letters_american_1995
