@@ -126,7 +126,7 @@ def predict_number(images):
             continue
         for prediction in predictions:
             p: str = prediction[0]
-            pts: Tuple[List, List, List, List] = prediction[1]
+            pts: Tuple[Tuple, Tuple, Tuple, Tuple] = prediction[1]
             pt_top_left, pt_top_right, pt_bottom_right, pt_bottom_left = pts
             width, height = pt_top_right[0] - pt_top_left[0], pt_bottom_right[1] - pt_top_right[1]
             area: float = width * height

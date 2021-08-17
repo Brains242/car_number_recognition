@@ -1,5 +1,6 @@
 from cv2 import cv2
-from main import find_blue, find_yellow
+
+from NumberFinder.ColorFinder import find_blue, find_yellow
 
 
 class CarNumberCorrelation:

@@ -67,6 +67,7 @@ def get_number(img):
     # cv2.rectangle(img, (x, y), (x+width, y+height), (0, 0, 255), 1)
     yellow_coordinates: Tuple[int, int, int, int] = find_yellow(img)
     year: int = get_type_of_car_number(*blue_coordinates[2:], *yellow_coordinates[2:])
+    print(year)
     needed_funcs: list = funcs_of_type[year]
     cropped_images: Dict[str, List[np.ndarray]] = {}
     for function in needed_funcs:
